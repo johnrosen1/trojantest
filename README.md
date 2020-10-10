@@ -6,5 +6,9 @@
 下载并直接使用:
 
 ```
-wget https://raw.githubusercontent.com/johnrosen1/trojantest/main/trojantest.sh && bash trojantest.sh -d example.com -p 123456
+wget https://raw.githubusercontent.com/johnrosen1/trojantest/main/trojantest.sh
+```
+
+```
+sudo bash trojantest.sh -d example.com -p 123456
 ```
