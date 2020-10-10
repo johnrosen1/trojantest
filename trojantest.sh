@@ -34,10 +34,10 @@ case $key in
 esac
 done
 
-echo "节点域名: ${Domain}"
-echo "节点密码: ${Password}"
+echo "---节点域名: ${Domain}---"
+echo "---节点密码: ${Password}---"
 
-echo "检测域名是否合法并存在"
+echo "-----检测域名是否合法并存在-----"
 
 if [ ! -f /usr/bin/host ]; then
 apt-get install dnsutils -y
@@ -60,9 +60,9 @@ else
 	echo "节点域名解析ip: ${remoteip}"
 fi
 
-echo "开始连通性测试"
+echo "-----开始连通性测试-----"
 
-echo "Tcping 测试"
+echo "---------Tcping 测试----------"
 
 if [ ! -f /usr/bin/nc ]; then
 apt-get install nmap -y
@@ -78,15 +78,45 @@ fi
 
 nping --tcp -p 443 ${Domain} -c 4
 
-echo "开始路由测试"
+echo "-----开始路由测试-----"
 
-echo "ICMP路由(不准确,仅供参考)"
+echo -e "----------ICMP路由(不准确,仅供参考)----------"
 
 traceroute ${Domain}
 
-echo "TCP 443路由"
+echo "----------TCP 443路由----------"
 
 tcptraceroute ${Domain} 443
+
+if [[ ! -d /etc/trojan/nodes/ ]]; then
+	mkdir /etc/trojan/
+	mkdir /etc/trojan/nodes/
+fi
+
+if [ ! -f /etc/systemd/system/trojan@.service ]; then
+	cat > '/etc/systemd/system/trojan.service' << EOF
+[Unit]
+Description=trojan
+Documentation=https://trojan-gfw.github.io/trojan/config https://trojan-gfw.github.io/trojan/
+Before=netdata.service
+After=network.target network-online.target nss-lookup.target mysql.service mariadb.service mysqld.service
+
+[Service]
+Type=simple
+StandardError=journal
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=99
+ExecStart=/usr/sbin/trojan /etc/trojan/nodes/%i.json
+ExecReload=/bin/kill -HUP $MAINPID
+LimitNOFILE=51200
+Restart=on-failure
+RestartSec=1s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sytemctl daemon-reload
+fi
 
 cd /etc/trojan/nodes/
 
@@ -142,7 +172,7 @@ if [[ $? != 0 ]]; then
 	exit 1
 fi
 
-echo "获取节点IP信息ing"
+echo "-----获取节点IP信息ing-----"
 
 curl --proxy socks5h://127.0.0.1:${local_port} https://ipinfo.io?token=56c375418c62c9 --connect-timeout 30
 
@@ -165,7 +195,7 @@ curl --proxy socks5h://127.0.0.1:${local_port} https://ipinfo.io?token=56c375418
 #echo -e "timezone:\t"$(jq -r '.timezone' "/etc/trojan/nodes/${Domain}_ip.json")
 #echo -e "------------------------------------------------------------------------"
 
-echo "测试Google连通性"
+echo "-----测试Google连通性-----"
 
 curl --proxy socks5h://127.0.0.1:${local_port} google.com --connect-timeout 30 &> /dev/null
 
@@ -174,10 +204,10 @@ if [[ $? != 0 ]]; then
 	google_test="0"
 	#exit 1;
 else
-	echo "Google测试通过"
+	echo "---Google测试通过---"
 fi
 
-echo "测试Telegram连通性"
+echo "-----测试Telegram连通性-----"
 
 curl --proxy socks5h://127.0.0.1:${local_port} 91.108.56.154:443 --connect-timeout 30 &> /dev/null
 
@@ -186,6 +216,7 @@ if [[ $? != 0 ]]; then
 	tg_test="0"
 	#exit 1;
 else
-	echo "Telegram测试通过"
+	echo "---Telegram测试通过---"
 fi
 
+echo "-----测试通过,一切正常-----"
