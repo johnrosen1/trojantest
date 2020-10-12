@@ -174,7 +174,7 @@ fi
 
 echo "-----获取节点IP信息ing-----"
 
-curl --proxy socks5h://127.0.0.1:${local_port} https://ipinfo.io?token=56c375418c62c9 --connect-timeout 30
+curl --proxy socks5h://127.0.0.1:${local_port} https://ipinfo.io?token=56c375418c62c9 --connect-timeout 30 &> ${Domain}_ip.json
 
 if [[ $? != 0 ]]; then
 	echo "获取IP信息失败"
@@ -182,7 +182,19 @@ if [[ $? != 0 ]]; then
 	exit 1;
 fi
 
-curl --proxy socks5h://127.0.0.1:${local_port} https://ipinfo.io?token=56c375418c62c9 --connect-timeout 30 &> ${Domain}_ip.json
+cat ${Domain}_ip.json
+
+echo "-----"
+
+curl -s --proxy socks5h://127.0.0.1:${local_port} ipv6.icanhazip.com --connect-timeout 30
+
+if [[ $? == 0 ]]; then
+	echo "IPv6可用"
+	remoteipv6=$(curl -s --proxy socks5h://127.0.0.1:${local_port} ipv6.icanhazip.com --connect-timeout 30)
+	echo "-----获取节点IPv6信息ing-----"
+	curl --proxy socks5h://127.0.0.1:${local_port} https://ipinfo.io/${remoteipv6}?token=56c375418c62c9 --connect-timeout 30 &> ${Domain}_ipv6.json
+	cat ${Domain}_ipv6.json
+fi
 
 #echo -e "----------------------IP信息(IP Information)----------------------------"
 #echo -e "ip:\t\t"$(jq -r '.ip' "/etc/trojan/nodes/${Domain}_ip.json")
